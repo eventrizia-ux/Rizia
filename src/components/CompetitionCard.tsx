@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { Calendar, Award, ArrowRight, MapPin } from 'lucide-react';
+import { Award, Calendar, Info, MapPin, Ticket } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface CompetitionCardProps {
@@ -12,86 +12,145 @@ interface CompetitionCardProps {
   image?: string;
   venue?: string;
   city?: string;
+  registrationDeadline?: string;
+  ageGroup?: string;
+  submissionFormat?: string;
+  registrationLink?: string;
 }
 
-export function CompetitionCard({ id, title, category, description, deadline, prize, image, venue, city }: CompetitionCardProps) {
-  const getCategoryColor = (category: string) => {
+export function CompetitionCard({
+  id,
+  title,
+  category,
+  description,
+  deadline,
+  prize,
+  image,
+  venue,
+  city,
+  registrationDeadline,
+  ageGroup,
+  submissionFormat,
+  registrationLink,
+}: CompetitionCardProps) {
+  const getCategoryColor = (categoryName: string) => {
     const colors: Record<string, string> = {
-      Art: 'bg-gradient-to-r from-purple-500 to-violet-500 text-white',
-      Dance: 'bg-gradient-to-r from-pink-500 to-rose-500 text-white',
-      Music: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white',
-      Concert: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white',
-      Writing: 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white',
-      Photography: 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white',
-      Film: 'bg-gradient-to-r from-red-500 to-pink-500 text-white',
-      Comedy: 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white',
-      Festival: 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white',
-      Literature: 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white',
-      'Music Festival': 'bg-gradient-to-r from-violet-500 to-purple-500 text-white',
+      'Drawing & Painting': 'from-purple-500 to-violet-500 text-white',
+      'Article Writing': 'from-teal-500 to-cyan-500 text-white',
+      Poetry: 'from-blue-500 to-cyan-500 text-white',
+      'Skit / Drama': 'from-pink-500 to-rose-500 text-white',
+      'Choreography / Dance': 'from-orange-500 to-amber-500 text-white',
+      'Vlogs / Short Videos': 'from-indigo-500 to-blue-500 text-white',
+      Speech: 'from-yellow-500 to-orange-500 text-white',
+      'Creative Arts': 'from-fuchsia-500 to-pink-500 text-white',
+      'Literary & Oratory': 'from-green-500 to-emerald-500 text-white',
+      'Performing Arts': 'from-red-500 to-orange-500 text-white',
+      'Digital Media': 'from-slate-500 to-slate-700 text-white',
     };
-    return colors[category] || 'bg-gradient-to-r from-gray-500 to-gray-600 text-white';
+    return colors[categoryName] || 'from-gray-500 to-gray-600 text-white';
+  };
+
+  const cardStyle = {
+    background:
+      'linear-gradient(180deg, rgba(34,42,68,0.97) 0%, rgba(84,43,135,0.93) 100%)',
+    boxShadow: '0 24px 52px rgba(22, 16, 53, 0.34)',
+  };
+  const contentStyle = {
+    background:
+      'linear-gradient(180deg, rgba(104,56,170,0.1) 0%, rgba(27,36,54,0.02) 100%)',
+  };
+  const subtleButtonStyle = {
+    background: 'rgba(255,255,255,0.07)',
   };
 
   return (
-    <Link to={`/competition/${id}`} className="group block">
-      <div className="rounded-3xl border border-white/15 bg-white/10 overflow-hidden shadow-xl backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-        {/* Event Image */}
-        {image && (
-          <div className="relative aspect-[16/10] overflow-hidden bg-white/5">
-            <ImageWithFallback 
-              src={image}
-              alt={title}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            />
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            {/* Category Badge on Image */}
-            <div className="absolute top-3 left-3">
-              <span className={`px-3 py-1.5 rounded-full text-xs shadow-lg ${getCategoryColor(category)}`}>
-                {category}
-              </span>
-            </div>
-          </div>
-        )}
-
-        <div className="p-5">
-          {/* Title */}
-          <h3 className="mb-3 min-h-[3.5rem] line-clamp-2 text-white transition-all group-hover:bg-gradient-to-r group-hover:from-pink-300 group-hover:to-cyan-300 group-hover:bg-clip-text group-hover:text-transparent">
-            {title}
-          </h3>
-          
-          {/* Details */}
-          <div className="space-y-2 mb-4">
-            {/* Date/Time */}
-            <div className="flex items-start gap-2 text-sm text-purple-200">
-              <Calendar size={16} className="text-purple-300 mt-0.5 flex-shrink-0" />
-              <span className="line-clamp-1">{deadline}</span>
-            </div>
-
-            {/* Venue/Location */}
-            {venue && (
-              <div className="flex items-start gap-2 text-sm text-purple-200">
-                <MapPin size={16} className="text-pink-300 mt-0.5 flex-shrink-0" />
-                <span className="line-clamp-1">{venue}</span>
-              </div>
-            )}
-
-            {/* Price */}
-            {prize && (
-              <div className="flex items-center gap-2 text-sm">
-                <Award size={16} className="text-indigo-300 flex-shrink-0" />
-                <span className="text-white">{prize}</span>
-              </div>
-            )}
-          </div>
-          
-          {/* CTA Button */}
-          <button className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white rounded-xl hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600 transition-all group-hover:gap-3 shadow-lg hover:shadow-xl">
-            <span className="text-sm">Book Now</span>
-            <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-          </button>
+    <article
+      className="w-full max-w-[388px] overflow-hidden rounded-[3rem] border border-white/10 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-white/20"
+      style={cardStyle}
+    >
+      <div className="relative h-44 overflow-hidden bg-white/5">
+        {image ? (
+          <ImageWithFallback
+            src={image}
+            alt={title}
+            className="block h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+          />
+        ) : null}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent" />
+        <div className="absolute left-4 top-4 right-4 flex flex-wrap gap-2">
+          <span className={`rounded-full bg-gradient-to-r px-3.5 py-1.5 text-[11px] leading-none shadow-lg ${getCategoryColor(category)}`}>
+            {category}
+          </span>
+          {ageGroup ? (
+            <span className="rounded-full border border-white/10 bg-black/35 px-3.5 py-1.5 text-[11px] leading-none text-white backdrop-blur-md">
+              {ageGroup}
+            </span>
+          ) : null}
         </div>
       </div>
-    </Link>
+
+      <div className="flex flex-col gap-4 p-6" style={contentStyle}>
+        <div className="space-y-2">
+          <h3 className="line-clamp-2 text-[1.22rem] leading-7 text-white">{title}</h3>
+          <p className="line-clamp-3 min-h-[64px] text-[13px] leading-6 text-purple-100/85">
+            {description}
+          </p>
+        </div>
+
+        <div className="space-y-3 px-1 text-[12px]">
+          <div className="flex items-start gap-2 text-purple-200">
+            <div className="mt-0.5 rounded-full bg-black/15 p-1.5">
+              <Calendar size={12} className="flex-shrink-0 text-purple-300" />
+            </div>
+            <span className="leading-5">{deadline}</span>
+          </div>
+
+          {(venue || city) && (
+            <div className="flex items-start gap-2 text-purple-200">
+              <div className="mt-0.5 rounded-full bg-black/15 p-1.5">
+                <MapPin size={12} className="flex-shrink-0 text-pink-300" />
+              </div>
+              <span className="line-clamp-2 leading-5">{[venue, city].filter(Boolean).join(', ')}</span>
+            </div>
+          )}
+
+          {(prize || submissionFormat) && (
+            <div className="flex items-center gap-2 text-purple-200">
+              <div className="rounded-full bg-black/15 p-1.5">
+                <Award size={12} className="flex-shrink-0 text-indigo-300" />
+              </div>
+              <span className="line-clamp-1">{prize || submissionFormat}</span>
+            </div>
+          )}
+
+          {registrationDeadline && (
+            <div className="flex items-start gap-2 text-pink-100">
+              <div className="mt-0.5 rounded-full bg-black/15 p-1.5">
+                <Ticket size={12} className="flex-shrink-0 text-pink-300" />
+              </div>
+              <span className="leading-5">Register by {registrationDeadline}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-3 px-1">
+          <Link
+            to={registrationLink || `/checkout/${id}`}
+            className="flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 px-4 py-3 text-center text-[13px] text-white shadow-lg transition-all hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600"
+          >
+            <Ticket size={14} />
+            <span>Register Now</span>
+          </Link>
+          <Link
+            to={`/competition/${id}`}
+            className="flex min-h-[46px] items-center justify-center gap-2 rounded-full border border-white/15 px-4 py-3 text-center text-[12px] text-white transition-all hover:bg-white/10"
+            style={subtleButtonStyle}
+          >
+            <Info size={13} />
+            <span>Competition Info</span>
+          </Link>
+        </div>
+      </div>
+    </article>
   );
 }

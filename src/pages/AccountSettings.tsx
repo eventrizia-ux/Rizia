@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { User, Mail, Lock, Camera, Sparkles } from 'lucide-react';
+import { supabase, hashPassword } from '../utils/supabaseClient';
+import { getUserDisplayName, getUserInitial } from '../utils/appData';
 
 interface AccountSettingsProps {
   user: any;
@@ -11,8 +13,8 @@ interface AccountSettingsProps {
 
 export default function AccountSettings({ user, onLogout, onUpdateUser }: AccountSettingsProps) {
   const [formData, setFormData] = useState({
-    name: user.name,
-    email: user.email,
+    name: user?.name || '',
+    email: user?.email || '',
     category: user.category || '',
     currentPassword: '',
     newPassword: '',
@@ -22,23 +24,27 @@ export default function AccountSettings({ user, onLogout, onUpdateUser }: Accoun
 
   const categories = ['Art', 'Dance', 'Music', 'Writing', 'Photography', 'Film'];
 
-  const handleUpdateProfile = (e: React.FormEvent) => {
+  const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const userIndex = users.findIndex((u: any) => u.id === user.id);
+    try {
+      if (supabase && user?.id) {
+        const { error } = await supabase
+          .from('users')
+          .update({
+            name: formData.name,
+            email: formData.email,
+            category: formData.category || null,
+          })
+          .eq('id', user.id);
 
-    if (userIndex !== -1) {
-      users[userIndex] = {
-        ...users[userIndex],
-        name: formData.name,
-        email: formData.email,
-        category: formData.category,
-      };
-      localStorage.setItem('users', JSON.stringify(users));
+        if (error) {
+          throw error;
+        }
+      }
 
       const updatedUser = {
-        id: user.id,
+        ...user,
         name: formData.name,
         email: formData.email,
         category: formData.category,
@@ -47,10 +53,13 @@ export default function AccountSettings({ user, onLogout, onUpdateUser }: Accoun
       onUpdateUser(updatedUser);
       setMessage('Profile updated successfully!');
       setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setMessage('Failed to update profile. Please try again.');
     }
   };
 
-  const handleUpdatePassword = (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (formData.newPassword !== formData.confirmPassword) {
@@ -63,12 +72,38 @@ export default function AccountSettings({ user, onLogout, onUpdateUser }: Accoun
       return;
     }
 
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const userIndex = users.findIndex((u: any) => u.id === user.id);
+    try {
+      if (!supabase || !user?.email) {
+        setMessage('Password updates are unavailable right now');
+        return;
+      }
 
-    if (userIndex !== -1 && users[userIndex].password === formData.currentPassword) {
-      users[userIndex].password = formData.newPassword;
-      localStorage.setItem('users', JSON.stringify(users));
+      const { data: loginRecord, error: loginError } = await supabase
+        .from('users_login')
+        .select('id, password_hash')
+        .eq('email', user.email)
+        .single();
+
+      if (loginError || !loginRecord) {
+        setMessage('Could not verify your current password');
+        return;
+      }
+
+      const currentPasswordHash = await hashPassword(formData.currentPassword);
+      if (currentPasswordHash !== loginRecord.password_hash) {
+        setMessage('Current password is incorrect');
+        return;
+      }
+
+      const newPasswordHash = await hashPassword(formData.newPassword);
+      const { error: updateError } = await supabase
+        .from('users_login')
+        .update({ password_hash: newPasswordHash })
+        .eq('id', loginRecord.id);
+
+      if (updateError) {
+        throw updateError;
+      }
 
       setFormData({
         ...formData,
@@ -79,8 +114,9 @@ export default function AccountSettings({ user, onLogout, onUpdateUser }: Accoun
 
       setMessage('Password updated successfully!');
       setTimeout(() => setMessage(''), 3000);
-    } else {
-      setMessage('Current password is incorrect');
+    } catch (error) {
+      console.error('Error updating password:', error);
+      setMessage('Failed to update password. Please try again.');
     }
   };
 
@@ -124,7 +160,7 @@ export default function AccountSettings({ user, onLogout, onUpdateUser }: Accoun
 
                 <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
                   <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 text-3xl text-white shadow-lg">
-                    {user.name.charAt(0).toUpperCase()}
+                    {getUserInitial(user)}
                   </div>
                   <div>
                     <button className="mb-2 flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 px-4 py-2 text-white transition-all hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600">
@@ -141,7 +177,7 @@ export default function AccountSettings({ user, onLogout, onUpdateUser }: Accoun
                 <div className="space-y-4">
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                     <p className="text-sm text-purple-300">Name</p>
-                    <p className="mt-1 text-white">{user.name}</p>
+                    <p className="mt-1 text-white">{getUserDisplayName(user)}</p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                     <p className="text-sm text-purple-300">Email</p>

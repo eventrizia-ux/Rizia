@@ -51,11 +51,7 @@ export function HeroCarousel() {
           subtitle: competition.description?.substring(0, 100) + (competition.description?.length > 100 ? '...' : ''),
           image: competition.image_url || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1080',
           category: competition.category,
-          date: competition.event_date ? new Date(competition.event_date).toLocaleDateString('en-IN', { 
-            day: 'numeric', 
-            month: 'short', 
-            year: 'numeric' 
-          }) : 'TBD',
+          date: competition.registration_dead || 'Registration open',
           venue: competition.venue || 'TBD',
           buttonText: 'View Details',
           buttonLink: `/competition/${competition.id}`

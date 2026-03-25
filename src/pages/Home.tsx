@@ -31,6 +31,7 @@ import {
   Star,
 } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { getEventDateLabel, getEventImage } from '../utils/appData';
 
 interface HomeProps {
   user?: any;
@@ -277,11 +278,15 @@ export default function Home({ user, selectedCity, onChangeCity }: HomeProps) {
                     title={event.title}
                     category={event.category}
                     description={event.description}
-                    deadline={event.date}
+                    deadline={getEventDateLabel(event)}
                     prize={event.price}
-                    image={event.image}
+                    image={getEventImage(event)}
                     venue={event.venue}
                     city={event.city}
+                    registrationDeadline={event.registration_dead}
+                    ageGroup={event.age_group}
+                    submissionFormat={event.submission_format}
+                    registrationLink={user ? `/checkout/${event.id}` : '/login'}
                   />
                 ))}
               </div>

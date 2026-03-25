@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-import { 
-  Ticket, 
-  Calendar, 
-  MapPin, 
-  Clock, 
-  CreditCard, 
+import {
+  Ticket,
+  Calendar,
+  MapPin,
+  Clock,
   User as UserIcon,
   Mail,
   Phone,
@@ -18,10 +17,18 @@ import {
   Download,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react';
 import { fetchUserBookings } from '../utils/supabaseHelpers';
 import { getSiteContent, type SiteContent } from '../utils/siteContent';
+import {
+  formatCurrency,
+  formatDate,
+  getBookingStatus,
+  getBookingTicketQuantity,
+  getUserDisplayName,
+  parseDisplayDate,
+} from '../utils/appData';
 
 interface DashboardProps {
   user: any;
@@ -42,10 +49,16 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const loadUserBookings = async () => {
     try {
       setLoading(true);
+      if (!user?.id) {
+        setBookings([]);
+        return;
+      }
+
       const data = await fetchUserBookings(user.id);
       setBookings(data || []);
     } catch (error) {
       console.error('Error loading bookings:', error);
+      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -55,14 +68,16 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     const colors: Record<string, string> = {
       confirmed: 'bg-green-100 text-green-700 border-green-200',
       pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      cancelled: 'bg-red-100 text-red-700 border-red-200'
+      cancelled: 'bg-red-100 text-red-700 border-red-200',
+      completed: 'bg-gray-500/20 text-gray-300 border-gray-500/30',
     };
-    return colors[status.toLowerCase()] || 'bg-gray-100 text-gray-700 border-gray-200';
+    return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200';
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status) {
       case 'confirmed':
+      case 'completed':
         return <CheckCircle size={16} />;
       case 'pending':
         return <AlertCircle size={16} />;
@@ -73,16 +88,27 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     }
   };
 
-  const upcomingBookings = bookings.filter(b => new Date(b.event_date) >= new Date());
-  const pastBookings = bookings.filter(b => new Date(b.event_date) < new Date());
+  const displayName = getUserDisplayName(user);
+  const now = new Date();
+  const normalizedBookings = bookings.map((booking) => ({
+    ...booking,
+    normalizedStatus: getBookingStatus(booking),
+    normalizedTicketQuantity: getBookingTicketQuantity(booking),
+    parsedEventDate: parseDisplayDate(booking.event_date),
+  }));
+  const upcomingBookings = normalizedBookings.filter((booking) =>
+    booking.parsedEventDate ? booking.parsedEventDate >= now : false
+  );
+  const pastBookings = normalizedBookings.filter((booking) =>
+    booking.parsedEventDate ? booking.parsedEventDate < now : false
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900">
       <Header user={user} onLogout={onLogout} />
-      
+
       <main className="flex-1 py-12 px-4">
         <div className="container mx-auto max-w-7xl">
-          {/* Welcome Section */}
           <div className="mb-8">
             <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -91,7 +117,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     <UserIcon size={32} />
                   </div>
                   <div>
-                    <h1 className="text-white text-3xl mb-1">Welcome back, {user.name}!</h1>
+                    <h1 className="text-white text-3xl mb-1">Welcome back, {displayName}!</h1>
                     <p className="text-purple-200">Manage your bookings and profile</p>
                   </div>
                 </div>
@@ -106,7 +132,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             </div>
           </div>
 
-          {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl">
               <div className="flex items-center gap-4">
@@ -145,7 +170,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             </div>
           </div>
 
-          {/* Tabs */}
           <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl overflow-hidden">
             <div className="border-b border-white/20">
               <div className="flex">
@@ -203,7 +227,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     </div>
                   ) : (
                     <div className="space-y-6">
-                      {/* Upcoming Bookings */}
                       {upcomingBookings.length > 0 && (
                         <div>
                           <h3 className="text-white text-xl mb-4 flex items-center gap-2">
@@ -224,9 +247,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                                       </div>
                                       <div className="flex-1">
                                         <h4 className="text-white text-lg mb-1">{booking.event_name}</h4>
-                                        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs border ${getStatusColor(booking.status)}`}>
-                                          {getStatusIcon(booking.status)}
-                                          <span className="capitalize">{booking.status}</span>
+                                        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs border ${getStatusColor(booking.normalizedStatus)}`}>
+                                          {getStatusIcon(booking.normalizedStatus)}
+                                          <span className="capitalize">{booking.normalizedStatus}</span>
                                         </div>
                                       </div>
                                     </div>
@@ -246,16 +269,14 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                                       </div>
                                       <div className="flex items-center gap-2 text-purple-200">
                                         <Ticket size={16} />
-                                        <span>{booking.ticket_count} Ticket(s)</span>
+                                        <span>{booking.normalizedTicketQuantity} Ticket(s)</span>
                                       </div>
                                     </div>
                                   </div>
 
                                   <div className="flex flex-col items-end gap-2">
-                                    <div className="text-2xl text-white">₹{booking.total_price}</div>
-                                    <div className="text-xs text-purple-300">
-                                      Booked on {new Date(booking.booking_date).toLocaleDateString()}
-                                    </div>
+                                    <div className="text-2xl text-white">{formatCurrency(booking.total_price)}</div>
+                                    <div className="text-xs text-purple-300">Booked on {formatDate(booking.booking_date)}</div>
                                   </div>
                                 </div>
                               </div>
@@ -264,7 +285,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         </div>
                       )}
 
-                      {/* Past Bookings */}
                       {pastBookings.length > 0 && (
                         <div>
                           <h3 className="text-white text-xl mb-4 flex items-center gap-2">
@@ -285,7 +305,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                                       </div>
                                       <div className="flex-1">
                                         <h4 className="text-white text-lg mb-1">{booking.event_name}</h4>
-                                        <div className="inline-flex items-center gap-1 px-2 py-1 bg-gray-500/20 text-gray-300 rounded-lg text-xs border border-gray-500/30">
+                                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs border border-gray-500/30 bg-gray-500/20 text-gray-300">
                                           <CheckCircle size={16} />
                                           <span>Completed</span>
                                         </div>
@@ -304,7 +324,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                                     </div>
                                   </div>
 
-                                  <div className="text-xl text-purple-300">₹{booking.total_price}</div>
+                                  <div className="text-xl text-purple-300">{formatCurrency(booking.total_price)}</div>
                                 </div>
                               </div>
                             ))}
@@ -323,7 +343,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         <UserIcon className="text-purple-300" size={20} />
                         <span className="text-purple-300 text-sm">Name</span>
                       </div>
-                      <div className="text-white text-lg">{user.name}</div>
+                      <div className="text-white text-lg">{displayName}</div>
                     </div>
 
                     <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
@@ -331,10 +351,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                         <Mail className="text-purple-300" size={20} />
                         <span className="text-purple-300 text-sm">Email</span>
                       </div>
-                      <div className="text-white text-lg">{user.email}</div>
+                      <div className="text-white text-lg">{user?.email || 'Not available'}</div>
                     </div>
 
-                    {user.phone && (
+                    {user?.phone && (
                       <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
                         <div className="flex items-center gap-3 mb-2">
                           <Phone className="text-purple-300" size={20} />
@@ -344,7 +364,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                       </div>
                     )}
 
-                    {user.city && (
+                    {user?.city && (
                       <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
                         <div className="flex items-center gap-3 mb-2">
                           <MapPin className="text-purple-300" size={20} />
@@ -412,7 +432,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );

@@ -23,6 +23,7 @@ import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
 import Help from './pages/Help';
 import Checkout from './pages/Checkout';
+import { parseStoredJson } from './utils/appData';
 
 function AppContent({ user, isAdmin, selectedCity, showLocationModal, setShowLocationModal, handleLogin, handleLogout, handleLocationSelect }: any) {
   const navigate = useNavigate();
@@ -87,7 +88,7 @@ export default function App() {
     const savedCity = localStorage.getItem('selectedCity');
     
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      setUser(parseStoredJson(savedUser, null));
       setIsAdmin(savedIsAdmin === 'true');
     }
 

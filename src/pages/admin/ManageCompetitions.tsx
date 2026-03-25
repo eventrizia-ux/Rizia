@@ -43,12 +43,14 @@ interface CompetitionFormData {
   time_limit: string;
   language_options: string[];
   is_active: boolean;
-  registration_deadline: string;
+  registration_dead: string;
   preliminary_date: string;
   grand_finale_date: string;
   venue: string;
   city: string;
   image_url: string;
+  tags: string;
+  features: string;
 }
 
 export default function ManageCompetitions({ onLogout }: ManageCompetitionsProps) {
@@ -77,12 +79,14 @@ export default function ManageCompetitions({ onLogout }: ManageCompetitionsProps
     time_limit: '',
     language_options: ['English', 'Tamil'],
     is_active: true,
-    registration_deadline: '',
+    registration_dead: '',
     preliminary_date: '',
     grand_finale_date: '',
     venue: '',
     city: 'Bengaluru',
-    image_url: ''
+    image_url: '',
+    tags: '',
+    features: '',
   });
 
   const categories = ['All', 'Drawing & Painting', 'Article Writing', 'Poetry', 'Skit / Drama', 'Choreography / Dance', 'Vlogs / Short Videos', 'Speech', 'Creative Arts', 'Literary & Oratory', 'Performing Arts', 'Digital Media'];
@@ -139,14 +143,20 @@ export default function ManageCompetitions({ onLogout }: ManageCompetitionsProps
         submission_format: competition.submission_format || 'PDF',
         word_limit: competition.word_limit || '',
         time_limit: competition.time_limit || '',
-        language_options: Array.isArray(competition.language_options) ? competition.language_options : ['English', 'Tamil'],
+        language_options: Array.isArray(competition.language_options)
+          ? competition.language_options
+          : typeof competition.language_options === 'string' && competition.language_options.trim()
+            ? competition.language_options.split(',').map((lang: string) => lang.trim()).filter(Boolean)
+            : ['English', 'Tamil'],
         is_active: competition.is_active !== undefined ? competition.is_active : true,
-        registration_deadline: competition.registration_deadline || '',
+        registration_dead: competition.registration_dead || '',
         preliminary_date: competition.preliminary_date || '',
         grand_finale_date: competition.grand_finale_date || '',
         venue: competition.venue || '',
         city: competition.city || 'Bengaluru',
-        image_url: competition.image_url || ''
+        image_url: competition.image_url || '',
+        tags: Array.isArray(competition.tags) ? competition.tags.join(', ') : competition.tags || '',
+        features: Array.isArray(competition.features) ? competition.features.join(', ') : competition.features || '',
       });
     } else {
       setEditingEvent(null);
@@ -165,12 +175,14 @@ export default function ManageCompetitions({ onLogout }: ManageCompetitionsProps
         time_limit: '',
         language_options: ['English', 'Tamil'],
         is_active: true,
-        registration_deadline: '',
+        registration_dead: '',
         preliminary_date: '',
         grand_finale_date: '',
         venue: '',
         city: 'Bengaluru',
-        image_url: ''
+        image_url: '',
+        tags: '',
+        features: '',
       });
     }
     setShowModal(true);
@@ -188,7 +200,9 @@ export default function ManageCompetitions({ onLogout }: ManageCompetitionsProps
       const competitionData = {
         ...formData,
         rules: Array.isArray(formData.rules) ? formData.rules : formData.rules.toString().split('\n').filter(rule => rule.trim()),
-        language_options: Array.isArray(formData.language_options) ? formData.language_options : formData.language_options.toString().split(',').map(lang => lang.trim())
+        language_options: Array.isArray(formData.language_options) ? formData.language_options : formData.language_options.toString().split(',').map(lang => lang.trim()),
+        tags: formData.tags,
+        features: formData.features,
       };
 
       if (editingEvent) {
@@ -503,7 +517,7 @@ export default function ManageCompetitions({ onLogout }: ManageCompetitionsProps
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                         <Calendar size={16} />
-                        <span>{event.event_date}</span>
+                        <span>{event.registration_dead || 'Deadline not set'}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                         <MapPin size={16} />
@@ -512,7 +526,7 @@ export default function ManageCompetitions({ onLogout }: ManageCompetitionsProps
                     </div>
 
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <span className="text-purple-600 dark:text-purple-400 font-semibold">{event.price}</span>
+                      <span className="text-purple-600 dark:text-purple-400 font-semibold">{event.submission_format || 'Competition'}</span>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleOpenModal(event)}
@@ -742,8 +756,8 @@ export default function ManageCompetitions({ onLogout }: ManageCompetitionsProps
                   <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">Registration Deadline</label>
                   <input
                     type="text"
-                    value={formData.registration_deadline}
-                    onChange={(e) => setFormData({...formData, registration_deadline: e.target.value})}
+                    value={formData.registration_dead}
+                    onChange={(e) => setFormData({...formData, registration_dead: e.target.value})}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white"
                     placeholder="e.g., Dec 15, 2025"
                   />

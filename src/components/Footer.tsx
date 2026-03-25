@@ -2,9 +2,13 @@ import { Link } from 'react-router';
 import { Trophy, Mail, Twitter, Instagram, Facebook, Linkedin } from 'lucide-react';
 import { RiziaLogo } from './RiziaLogo';
 
-export function Footer() {
+interface FooterProps {
+  seamless?: boolean;
+}
+
+export function Footer({ seamless = false }: FooterProps) {
   return (
-    <footer className="bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 text-gray-300 mt-auto">
+    <footer className={`${seamless ? 'bg-transparent' : 'bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900'} text-gray-300 mt-auto`}>
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           <div>
@@ -85,7 +89,7 @@ export function Footer() {
           </div>
         </div>
         
-        <div className="border-t border-white/10 pt-8">
+        <div className={`${seamless ? 'pt-8' : 'border-t border-white/10 pt-8'}`}>
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-400">
             <p>&copy; 2025 Rizia. All rights reserved.</p>
             <div className="flex items-center gap-6">

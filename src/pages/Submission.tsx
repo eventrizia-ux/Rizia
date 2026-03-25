@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { fetchEventById } from '../utils/supabaseHelpers';
-import { ArrowLeft, Calendar, MapPin, Ticket, Info } from 'lucide-react';
+import { ArrowLeft, CalendarDays, MapPin, Ticket, Info, ClipboardList, Languages } from 'lucide-react';
+import { getEventDateLabel, getEventLanguage, normalizeStringList } from '../utils/appData';
 
 interface SubmissionProps {
   user: any;
@@ -28,6 +29,7 @@ export default function Submission({ user }: SubmissionProps) {
       setEvent(data);
     } catch (error) {
       console.error('Error loading event:', error);
+      setEvent(null);
     } finally {
       setLoading(false);
     }
@@ -38,7 +40,7 @@ export default function Submission({ user }: SubmissionProps) {
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900">
         <Header user={user} />
         <main className="flex-1 flex items-center justify-center">
-          <div className="text-white text-xl">Loading event...</div>
+          <div className="text-white text-xl">Loading competition...</div>
         </main>
         <Footer />
       </div>
@@ -51,7 +53,7 @@ export default function Submission({ user }: SubmissionProps) {
         <Header user={user} />
         <main className="flex-1 flex items-center justify-center px-4">
           <div className="text-center">
-            <h1 className="text-white mb-4">Event Not Found</h1>
+            <h1 className="text-white mb-4">Competition Not Found</h1>
             <button
               onClick={() => navigate(-1)}
               className="px-6 py-3 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white rounded-full hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600 transition-all"
@@ -65,73 +67,92 @@ export default function Submission({ user }: SubmissionProps) {
     );
   }
 
+  const rules = normalizeStringList(event.rules);
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900">
       <Header user={user} />
-      
+
       <main className="flex-1 py-12 px-4">
         <div className="container mx-auto max-w-4xl">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-white mb-6 hover:text-purple-300 transition-colors"
+            className="mb-6 flex items-center gap-2 text-white transition-colors hover:text-purple-300"
           >
             <ArrowLeft size={20} />
             Back
           </button>
 
-          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl">
-            {/* Info Banner */}
-            <div className="bg-blue-500/20 backdrop-blur-lg border border-blue-500/30 rounded-2xl p-6 mb-8">
+          <div className="rounded-3xl border border-white/20 bg-white/10 p-8 shadow-2xl backdrop-blur-xl md:p-12">
+            <div className="mb-8 rounded-2xl border border-blue-500/30 bg-blue-500/20 p-6">
               <div className="flex items-start gap-3">
-                <Info className="text-blue-300 flex-shrink-0 mt-1" size={24} />
+                <Info className="mt-1 flex-shrink-0 text-blue-300" size={24} />
                 <div>
-                  <h3 className="text-white mb-2">Event Booking Information</h3>
+                  <h3 className="mb-2 text-white">Registration Details</h3>
                   <p className="text-blue-200">
-                    This is an event ticketing platform. To attend this event, please book your tickets through the event details page.
+                    Review the competition requirements below before proceeding with your participation.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Event Details */}
-            <div className="text-center mb-8">
-              <h1 className="text-white mb-4">{event.title}</h1>
+            <div className="mb-8 text-center">
+              <h1 className="mb-4 text-white">{event.title}</h1>
               <div className="space-y-3 text-gray-200">
                 <div className="flex items-center justify-center gap-2">
-                  <Calendar size={20} className="text-purple-400" />
-                  <span>{event.date} {event.time && `at ${event.time}`}</span>
+                  <CalendarDays size={20} className="text-purple-400" />
+                  <span>Register by {getEventDateLabel(event)}</span>
                 </div>
                 <div className="flex items-center justify-center gap-2">
                   <MapPin size={20} className="text-purple-400" />
                   <span>{event.venue}, {event.city}</span>
                 </div>
                 <div className="flex items-center justify-center gap-2">
+                  <Languages size={20} className="text-purple-400" />
+                  <span>{getEventLanguage(event)}</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
                   <Ticket size={20} className="text-purple-400" />
-                  <span>Starting from {event.price}</span>
+                  <span>{event.submission_format || 'Submission details will be shared by admin'}</span>
                 </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {rules.length > 0 && (
+              <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6">
+                <h2 className="mb-4 flex items-center gap-2 text-white">
+                  <ClipboardList size={20} className="text-pink-300" />
+                  Rules
+                </h2>
+                <div className="space-y-3">
+                  {rules.map((rule) => (
+                    <div key={rule} className="rounded-xl bg-white/5 px-4 py-3 text-gray-200">
+                      {rule}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-3">
               <Link
-                to={`/competition-details/${id}`}
-                className="block w-full py-4 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white rounded-xl hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600 transition-all shadow-lg hover:shadow-xl text-center"
+                to={`/competition/${id}`}
+                className="block w-full rounded-xl bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 py-4 text-center text-white shadow-lg transition-all hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600"
               >
-                View Event Details & Book Tickets
+                Competition Info
               </Link>
 
               <Link
                 to="/competitions"
-                className="block w-full py-4 bg-white/10 backdrop-blur-lg border border-white/20 text-white rounded-xl hover:bg-white/20 transition-all text-center"
+                className="block w-full rounded-xl border border-white/20 bg-white/10 py-4 text-center text-white transition-all hover:bg-white/20"
               >
-                Browse More Events
+                Back to Competitions
               </Link>
             </div>
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );
